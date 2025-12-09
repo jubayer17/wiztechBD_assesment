@@ -1,65 +1,109 @@
-import Image from "next/image";
+"use client"
+import { useState, useMemo } from 'react'
+import AmenitiesSelector from '@/components/home/AmenitiesSelector'
+import Navbar from '@/components/home/Navbar'
+import Preference from '@/components/home/Preference'
+import Property from '@/components/home/Property'
+import PropertyTypeSelector from '@/components/home/PropertyTypeSelector'
+import RentScroller from '@/components/home/RentScroller'
+import SuburbSelector from '@/components/home/SuburbSelector'
+import PropertyList from '@/components/home/PropertyList'
+import Pagination from '@/components/home/Pagination'
+import { properties } from '@/data/properties'
+import HeroStatsSection from '@/components/home/HeroStatsSection'
+import Footer from '@/components/home/Footer'
+import EssentialTools from '@/components/home/EssentialTools'
+import Testimonials from '@/components/home/Testimonials'
+import RevenueStreamsSection from '@/components/home/RevenueStreamsSection'
+import TrustedBySection from '@/components/home/TrustedBySection'
 
-export default function Home() {
+export default function Page() {
+  const [selectedSuburbs, setSelectedSuburbs] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<string>("Low to High");
+  const [minRent, setMinRent] = useState(300);
+  const [maxRent, setMaxRent] = useState(670000);
+  const itemsPerPage = 6;
+
+  // Calculate filtered properties and total pages
+  const { filteredCount, totalPages } = useMemo(() => {
+    const filtered = properties.filter((property) => {
+      const suburbMatch = selectedSuburbs.length === 0 || selectedSuburbs.includes(property.suburb);
+      const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(property.propertyType);
+      const amenitiesMatch = selectedAmenities.length === 0 ||
+        selectedAmenities.every(amenity => property.amenities.includes(amenity));
+      const rentMatch = property.price >= minRent && property.price <= maxRent;
+      return suburbMatch && typeMatch && amenitiesMatch && rentMatch;
+    });
+    return {
+      filteredCount: filtered.length,
+      totalPages: Math.ceil(filtered.length / itemsPerPage)
+    };
+  }, [selectedSuburbs, selectedTypes, selectedAmenities, minRent, maxRent]);
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setSelectedSuburbs([]);
+    setSelectedTypes([]);
+    setSelectedAmenities([]);
+    setMinRent(300);
+    setMaxRent(670000);
+    setCurrentPage(1);
+    setSortBy("Low to High");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="bg-[#f5f2ed] min-h-screen">
+      <Navbar />
+      <div className='flex flex-col lg:flex-row gap-4 lg:gap-6 px-4 sm:px-6 lg:px-12 py-4 sm:py-6'>
+        {/* left section */}
+        <div className='w-full lg:w-[26%] flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start'>
+          <Preference onReset={handleResetFilters} />
+          <RentScroller
+            key={`${minRent}-${maxRent}`}
+            minValue={minRent}
+            maxValue={maxRent}
+            onChange={(values) => {
+              setMinRent(values.min);
+              setMaxRent(values.max);
+              setCurrentPage(1);
+            }}
+          />
+          <SuburbSelector selectedSuburbs={selectedSuburbs} onChange={(suburbs) => { setSelectedSuburbs(suburbs); setCurrentPage(1); }} />
+          <PropertyTypeSelector selectedTypes={selectedTypes} onChange={(types) => { setSelectedTypes(types); setCurrentPage(1); }} />
+          <AmenitiesSelector selectedAmenities={selectedAmenities} onChange={(amenities) => { setSelectedAmenities(amenities); setCurrentPage(1); }} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        {/* right section */}
+        <div className='flex-1 flex flex-col gap-4'>
+          <Property resultCount={filteredCount} onSortChange={setSortBy} />
+          <PropertyList
+            selectedSuburbs={selectedSuburbs}
+            selectedTypes={selectedTypes}
+            selectedAmenities={selectedAmenities}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            sortBy={sortBy}
+            minRent={minRent}
+            maxRent={maxRent}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+
         </div>
-      </main>
+
+      </div>
+      <HeroStatsSection />
+      <TrustedBySection />
+      <RevenueStreamsSection />
+      <Testimonials />
+
+      <EssentialTools />
+      <Footer />
     </div>
-  );
+  )
 }
